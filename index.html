@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <base target="_top">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+
+<body>
+  <div id="tela-login" class="container">
+    <div class="card-panel">
+      <h4 class="center-align blue-text text-darken-3" style="font-weight: bold;">
+        Diario Escolar de Química
+      </h4>
+      <p class="center-align grey-text">Portal do Aluno</p>
+      <form class="col s12">
+        <div class="row">
+          <div class="input-field col s12">
+            <select id="turma">
+              <option value="" disabled selected>Selecione a sua Turma</option>
+              <? for (var i = 0; i < turmas.length; i++) { ?>
+                <option value="<?= turmas[i] ?>"> <?= turmas[i] ?> </option>
+              <? } ?>
+            </select>
+            <label for="turma">Turma:</label>
+          </div>
+        </div>
+        <div class="row">
+          <div class="input-field col s12">
+            <input type="text" id="nome" class="validate">
+            <label for="nome">Nome</label>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="input-field col s12">
+            <input type="email" id="e-mail" class="validate">
+            <label for="e-mail">e-mail</label>
+          </div>
+        </div>
+        <div class="row center-align">
+          <button class="waves-effect waves-light btn" id="btn-loggin">Entrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="tela-resultados" class="container hide">
+    <div class="card-panel">
+
+      <h4 class="center-align">Boletim Escolar</h4>
+      <h5 id="aluno-nome" class="center-align blue-text text-darken-2"></h5>
+      <div class="divider"></div>
+
+      <div class="section">
+        <ul class="collapsible popout" id="lista-boletim">
+        </ul>
+      </div>
+
+      <div class="center-align" style="margin-top: 30px;">
+        <button class="btn red waves-effect waves-light" onclick="voltarParaLogin()">
+              <i class="material-icons left">arrow_back</i> Sair
+            </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <?!= include("javaScript"); ?>
+
+</body>
+
+</html>
