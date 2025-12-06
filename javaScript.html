@@ -1,0 +1,188 @@
+<script>
+  var usuarioAtual = {};
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var elems = document.querySelectorAll('select');
+    var instances = M.FormSelect.init(elems, 0);
+  });
+
+  document.querySelector("#btn-loggin").addEventListener("click", (event) => {
+    event.preventDefault(); // Não recarrega a página
+
+    const dados = {
+       turma: document.querySelector("#turma").value,
+       nome: document.querySelector("#nome").value,
+       email: document.querySelector("#e-mail").value
+    };
+
+    // --- VALIDAÇÃO NO FRONTEND ---
+    
+    // 1. Campos Vazios
+    if(!dados.turma || !dados.nome || !dados.email) {
+       M.toast({html: 'Preencha todos os campos!', classes: 'orange'});
+       return;
+    }
+
+    // 2. Formato do E-mail (Regex simples)
+    // Verifica se tem @ e se tem um ponto depois do @
+    const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!regexEmail.test(dados.email)) {
+       M.toast({html: 'E-mail inválido! Digite corretamente (ex: aluno@gmail.com)', classes: 'red'});
+       // Foca no campo de e-mail para ajudar o usuário
+       document.querySelector("#e-mail").focus(); 
+       return;
+    }
+    // -----------------------------
+    // Feedback visual que está processando
+    const btn = document.querySelector("#btn-loggin");
+    const textoOriginal = btn.innerText;
+    btn.innerText = "Verificando...";
+    btn.disabled = true;
+
+    google.script.run
+      .withSuccessHandler(function(retorno) {
+          // Reativa o botão
+          btn.innerText = textoOriginal;
+          btn.disabled = false;
+
+          if (retorno.sucesso) {
+            // SUCESSO: Chama a função que monta a tabela
+            usuarioAtual = {
+              turma: retorno.turma,
+              matricula: retorno.matricula,
+              nome: retorno.aluno
+            };
+            mostrarBoletim(retorno);
+          }
+      })
+      .withFailureHandler(function(erro) {
+          // Reativa o botão
+          btn.innerText = textoOriginal;
+          btn.disabled = false;
+
+          // ERRO: Mostra o Toast Vermelho
+          console.error(erro);
+          M.toast({html: 'Erro: ' + erro.message, classes: 'red rounded', displayLength: 4000});
+      })
+      .login(dados);
+});
+
+// --- FUNÇÃO 1: Preenche e mostra o boletim ---
+function mostrarBoletim(dados) {
+    // ... (parte inicial da função igual) ...
+    document.getElementById("tela-login").classList.add("hide");
+    document.getElementById("tela-resultados").classList.remove("hide");
+    document.getElementById("aluno-nome").innerText = dados.aluno;
+
+    const lista = document.getElementById("lista-boletim");
+    lista.innerHTML = ""; 
+
+    dados.dadosBimestres.forEach((dado, index) => {
+        let valorMedia = typeof dado.media === 'number' ? dado.media : null;
+        let corBadge = valorMedia !== null ? (valorMedia >= 6.0 ? "green" : "red") : "grey";
+        let textoMedia = valorMedia !== null ? valorMedia.toFixed(1) : "-";
+
+        // === LÓGICA ATUALIZADA DO 4º BIMESTRE ===
+        let conteudoExtra = "";
+        
+        // Verifica se é o 4º Bimestre
+        if (index === 3) {
+            let nota1 = parseFloat(dado.n1);
+            
+            // Regra: N1 válida E menor que 6.0
+            if (!isNaN(nota1) && nota1 < 6.0) {
+                
+                // VERIFICAÇÃO NOVA: Se já pediu, mostra aviso. Se não, mostra botão.
+                if (dados.jaSolicitou) {
+                    // Caso já tenha pedido
+                    conteudoExtra = `
+                        <div class="center-align green lighten-4 green-text text-darken-4" 
+                             style="margin-top: 15px; padding: 10px; border-radius: 4px;">
+                            <strong>Status:</strong> Recuperação já solicitada. Aguarde orientações.
+                        </div>
+                    `;
+                } else {
+                    // Caso AINDA NÃO tenha pedido (Exibe o Botão)
+                    conteudoExtra = `
+                      <div class="row center-align" style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">
+                          <p class="red-text">Sua nota na 1ª Avaliação foi baixa.</p>
+                          <button id="btn-recuperacao" class="btn waves-effect waves-light orange darken-3" 
+                                  onclick="pedirRecuperacao(this)">
+                              Solicitar Recuperação
+                          </button>
+                      </div>
+                    `;
+                }
+            }
+        }
+        // =============================================
+
+        let item = `
+        <li>
+          <div class="collapsible-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: bold;">${dado.titulo}</span>
+            <span class="new badge ${corBadge}" data-badge-caption="Média">${textoMedia}</span>
+          </div>
+          <div class="collapsible-body white">
+            <div class="row" style="margin-bottom: 0;">
+                <div class="col s3 center-align"><small>N1</small><br><strong>${dado.n1}</strong></div>
+                <div class="col s3 center-align"><small>Rec</small><br><strong class="red-text">${dado.rec}</strong></div>
+                <div class="col s3 center-align"><small>N2</small><br><strong>${dado.n2}</strong></div>
+                <div class="col s3 center-align"><small>N3</small><br><strong>${dado.n3}</strong></div>
+            </div>
+            
+            ${conteudoExtra}
+            
+          </div>
+        </li>
+        `;
+        lista.innerHTML += item;
+    });
+
+    M.Collapsible.init(document.querySelectorAll('.collapsible'));
+}
+
+function pedirRecuperacao(btnElement) {
+    // Desabilita o botão para evitar clique duplo
+    btnElement.disabled = true;
+    btnElement.innerText = "Enviando...";
+
+    google.script.run
+      .withSuccessHandler(function(resposta) {
+          // Muda o visual do botão para confirmar
+          btnElement.classList.remove("orange");
+          btnElement.classList.add("green");
+          btnElement.innerText = "Solicitado";
+          M.toast({html: resposta, classes: 'green'});
+      })
+      .withFailureHandler(function(erro) {
+          btnElement.disabled = false;
+          btnElement.innerText = "Tentar Novamente";
+          M.toast({html: "Erro ao enviar: " + erro.message, classes: 'red'});
+      })
+      .registrarInteresseRecuperacao(usuarioAtual); // Usa a variável global
+}
+
+// --- FUNÇÃO 2: Botão Sair (Reseta tudo) ---
+function voltarParaLogin() {
+    // 1. Inverte a visibilidade
+    document.getElementById("tela-resultados").classList.add("hide");
+    document.getElementById("tela-login").classList.remove("hide");
+
+    // 2. Limpa os campos de input
+    document.querySelector("#nome").value = "";
+    document.querySelector("#e-mail").value = "";
+    
+    // 3. Reseta o Select de Turma
+    const selectTurma = document.querySelector("#turma");
+    selectTurma.value = "Selecione a sua Turma";
+    M.FormSelect.init(selectTurma);
+
+    // 4. Remove validações visuais (verde/vermelho) e reseta labels
+    document.querySelectorAll("input").forEach(input => {
+        input.classList.remove("valid", "invalid");
+    });
+    M.updateTextFields();
+    usuarioAtual = {};
+}
+</script>
