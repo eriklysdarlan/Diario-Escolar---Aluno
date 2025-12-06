@@ -25,7 +25,7 @@ Este projeto é um **Portal do Aluno** onde o estudante pode realizar login sele
 
 <img width="1149" height="700" alt="Pagina de visualizaçao do app" src="https://github.com/user-attachments/assets/9bff9c65-9a1b-4013-b04b-897a98dc24d9" />
 
-## 📂 Estrutura do Projeto
+## Estrutura do Projeto
 
 O projeto no Google Apps Script deve ser organizado da seguinte forma:
 
@@ -36,7 +36,7 @@ O projeto no Google Apps Script deve ser organizado da seguinte forma:
 
 ```
 
-## 📊 Estrutura da Planilha (Banco de Dados)
+## Estrutura da Planilha (Banco de Dados)
 
 O sistema utiliza uma Planilha Google como backend. Para que a aplicação funcione corretamente, a planilha deve seguir rigorosamente a estrutura de colunas abaixo.
 
